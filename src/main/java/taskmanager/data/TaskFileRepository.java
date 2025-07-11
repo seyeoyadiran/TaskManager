@@ -24,7 +24,7 @@ public class TaskFileRepository implements TaskRepository {
         List<Task> result = new ArrayList<>();
         //Try with resources
         try(BufferedReader reader = new BufferedReader(new FileReader(filePath))){
-        //skip the headerline
+            //skip the headerline
             reader.readLine();
 
             for(String line = reader.readLine(); line != null; line = reader.readLine()){
@@ -40,23 +40,62 @@ public class TaskFileRepository implements TaskRepository {
     }
 
     @Override
-    public Task findById(int taskId) {
-        return null;
+    public Task findById(int taskId)throws DataAccessException {
+        List<Task> all = findAll();
+        for(Task task : all){
+            if(task.getId() == taskId){
+                return task;
+            }
+        }
+        return null; //if not found
     }
 
     @Override
-    public Task create(Task task){
-        return null;
+    public Task create(Task task) throws DataAccessException{
+        List<Task> all = findAll();
+        //genereate id
+        int nextId = getNextId(all);
+        task.setId(nextId);
+
+        all.add(task);
+        WriteToFile(all);
+        return task;
+
     }
 
     @Override
-    public boolean update(Task task){
+    public boolean update(Task task) throws DataAccessException {
+        List<Task> all = findAll();
+        for(int i = 0; i < all.size(); i++){
+            if(all.get(i).getId() == task.getId()){
+                all.set(i, task);
+                try {
+                    WriteToFile(all);
+                    return true; //update successful
+                } catch (DataAccessException e) {
+                    throw new DataAccessException("Could not update task: " + task.getId());
+                }
+            }
+        }
         return false;
     }
 
     @Override
-    public boolean delete(int task){
-        return false;
+    public boolean delete(int task) throws DataAccessException {
+
+        List<Task> all = findAll();
+        for(int i = 0; i < all.size(); i++){
+            if(all.get(i).getId() == task){
+                all.remove(i);
+                try {
+                    WriteToFile(all);
+                    return true; //delete successful
+                } catch (DataAccessException e) {
+                    throw new DataAccessException("Could not delete task: " + task);
+                }
+            }
+        }
+        return false; //if not found
     }
 
     //helper methods
